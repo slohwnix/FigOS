@@ -18,7 +18,7 @@ use crate::system::apic::{init_lapic, IoApic};
 use crate::system::time;
 use crate::system::graphic::Backend;
 use uefi::boot::MemoryType;
-use uefi::mem::memory_map::MemoryMap; 
+use uefi::mem::memory_map::MemoryMap;
 
 static GDT_INSTANCE: Once<Gdt> = Once::new();
 static IDT_INSTANCE: Once<Idt> = Once::new();
@@ -61,30 +61,41 @@ fn main() -> Status {
                 pitch: stride,
             })
         ));
-        
         if let Some(ref mut console) = system::GLOBAL_CONSOLE {
             console.clear(0x000000);
         }
     }
 
-    log_info!("FigOS Kernel booting");
-    log_info!("Max Resolution set : {}x{}", width, height);
+    log!("OK", "FigOS Kernel booting");
+    log!("INFO", "Max Resolution set : {}x{}", width, height);
 
+    log!("INFO", "Initializing GDT...");
     let gdt = GDT_INSTANCE.call_once(|| Gdt::new());
     unsafe { gdt.load(); }
-    
+    log!("OK", "GDT loaded successfully");
+
+    log!("INFO", "Initializing IDT...");
     let idt = IDT_INSTANCE.call_once(|| Idt::new());
     unsafe { idt.load(); }
+    log!("OK", "IDT loaded successfully");
 
-    unsafe {
-        init_lapic();
-        let _ioapic = IoApic::init();
-        core::arch::asm!("sti");
-        time::init();
-    }
+    log!("INFO", "Initializing LAPIC...");
+    unsafe { init_lapic(); }
+    log!("OK", "LAPIC initialized successfully");
 
+    log!("INFO", "Initializing IO APIC...");
+    let _ioapic = unsafe { IoApic::init() };
+    log!("OK", "IO APIC initialized successfully");
+
+    log!("OK", "Enabling interrupts...");
+    unsafe { core::arch::asm!("sti"); }
+
+    log!("INFO", "Initializing time subsystem...");
+    time::init();
     time::calibrate_uefi();
+    log!("OK", "Time subsystem ready");
 
+    log!("OK", "Fetching memory map...");
     let memory_map = uefi::boot::memory_map(MemoryType::LOADER_DATA)
         .expect("Failed to get memory map");
 
@@ -108,25 +119,27 @@ fn main() -> Status {
     }
 
     if bitmap_addr.is_null() {
-        panic!("Could not find a free spot for the memory bitmap!");
+        log!("ERROR", "Could not find a free spot for the memory bitmap!");
+        panic!("Memory bitmap allocation failed");
     }
 
+    log!("INFO", "Initializing Memory Manager...");
     let mut mm = unsafe { MemoryManager::new(bitmap_addr, max_addr) };
 
     for desc in memory_map.entries() {
-        if desc.ty == MemoryType::CONVENTIONAL 
-            || desc.ty == MemoryType::BOOT_SERVICES_CODE 
-            || desc.ty == MemoryType::BOOT_SERVICES_DATA 
+        if desc.ty == MemoryType::CONVENTIONAL
+            || desc.ty == MemoryType::BOOT_SERVICES_CODE
+            || desc.ty == MemoryType::BOOT_SERVICES_DATA
         {
             let phys = desc.phys_start as usize;
             let size = (desc.page_count as usize) * 4096;
             mm.free_region(phys, size);
         }
     }
-    
+
     let bitmap_frame_count = (bitmap_size + 4095) / 4096;
     for _ in 0..bitmap_frame_count {
-        mm.alloc_frames(1); 
+        mm.alloc_frames(1);
     }
 
     unsafe {
@@ -138,8 +151,10 @@ fn main() -> Status {
     }
 
     MM_INSTANCE.call_once(|| Mutex::new(mm));
+    log!("OK", "Memory Manager ready");
 
-    log_info!("Kernel ready");
+    log!("OK", "Kernel ready");
+    log!("OK", "Keyboard subsystem ready");
 
     print!("> ");
     unsafe {

@@ -46,16 +46,22 @@ pub fn print_fmt(args: fmt::Arguments) {
     use core::fmt::Write;
     unsafe {
         if let Some(ref mut c) = GLOBAL_CONSOLE {
-            
-            
             let _ = c.write_fmt(args);
         }
     }
 }
 
+pub fn get_status_color(status: &str) -> u32 {
+    match status {
+        "OK" => 0x00FF00,
+        "WARN" | "INFO" => 0xFFFF00,
+        "ERROR" => 0xFF0000,
+        _ => 0xFFFFFF,
+    }
+}
+
 impl fmt::Write for Console {
     fn write_str(&mut self, s: &str) -> fmt::Result {
-        
         self.write_str(s);
         Ok(())
     }
@@ -69,22 +75,21 @@ macro_rules! print {
 #[macro_export]
 macro_rules! clear_screen {
     ($color:expr) => {
-        unsafe {
-            if let Some(ref mut c) = $crate::system::GLOBAL_CONSOLE {
-                c.clear($color);
-                
-            }
+        if let Some(ref mut c) = unsafe { $crate::system::GLOBAL_CONSOLE.as_mut() } {
+            c.clear($color);
         }
     };
 }
 
 #[macro_export]
-macro_rules! log_info {
-    ($($arg:tt)*) => {
+macro_rules! log {
+    ($status:expr, $($arg:tt)*) => {
         unsafe {
             if let Some(ref mut c) = $crate::system::GLOBAL_CONSOLE {
-                c.set_color(0x00FF00);
-                $crate::print!("[ INFO  ] ");
+                let s: &str = $status;
+                let color = $crate::system::get_status_color(s);
+                c.set_color(color);
+                $crate::print!("[ {} ] ", s);
                 c.set_color(0xFFFFFF);
                 $crate::print!($($arg)*);
                 $crate::print!("\n");
