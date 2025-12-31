@@ -1,0 +1,6 @@
+/target
+/deploy
+ovmf.fd
+qemu.log
+uefi_boot.iso
+FigOS.efi
