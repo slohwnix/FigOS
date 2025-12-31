@@ -76,15 +76,16 @@ pub fn process_command() {
         }
 
         let cmd_name = &cmd_line[..split_idx];
-        let args = if split_idx < BUFFER_IDX { &cmd_line[split_idx + 1..] } else { b"" };
+        let _args = if split_idx < BUFFER_IDX { &cmd_line[split_idx + 1..] } else { b"" };
 
         match cmd_name {
             b"help"  => help::execute(),
             b"fetch" => fetch::execute(), 
             b"gpu"   => gpu::execute(), 
             b"clear" => { if let Some(ref mut c) = GLOBAL_CONSOLE { c.clear(0x000000); } },
-            b"wait"  => wait::execute(args),
-            b"say"   => say::execute(args),
+            b"wait"  => wait::execute(_args),
+            b"say"   => say::execute(_args),
+            b"panic" => panic!("User requested panic test"),
             _ => print!("\nUnknown command"),
         }
 

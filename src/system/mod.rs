@@ -97,3 +97,14 @@ macro_rules! log {
         }
     };
 }
+
+#[macro_export]
+macro_rules! set_color_text {
+    ($fg:expr, $bg:expr) => {
+        unsafe {
+            if let Some(ref mut c) = $crate::system::GLOBAL_CONSOLE {
+                c.set_colors($fg, $bg);
+            }
+        }
+    };
+}

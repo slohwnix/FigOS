@@ -22,6 +22,7 @@ impl Gdt {
 
     pub unsafe fn load(&'static self) {
         static mut GDT_DESC: GdtDescriptor = GdtDescriptor { size: 0, offset: 0 };
+        
         GDT_DESC = GdtDescriptor {
             size: (size_of::<[u64; 3]>() - 1) as u16,
             offset: self.entries.as_ptr() as u64,

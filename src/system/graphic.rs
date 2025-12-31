@@ -1,5 +1,3 @@
-#[allow(dead_code)]
-
 use crate::drivers::uefi_fb::Framebuffer as UefiFb;
 use crate::drivers::gpu_fb::Framebuffer as GpuFb;
 
@@ -18,7 +16,7 @@ pub trait GraphicBackend {
     fn swap_buffers(&self);
     fn swap_rect(&self, x: usize, y: usize, w: usize, h: usize);
     fn set_virtual_res(&mut self, width: usize, height: usize);
-    fn draw_char(&self, c: char, x: usize, y: usize, color: u32);
+    fn draw_char(&self, c: char, x: usize, y: usize, color: u32, bg_color: Option<u32>);
     fn scroll(&self, lines: usize, char_height: usize, bg_color: Option<u32>);
 }
 
@@ -62,7 +60,7 @@ impl GraphicBackend for Backend {
         }
     }
 
-    fn draw_char(&self, c: char, x: usize, y: usize, color: u32) {
+    fn draw_char(&self, c: char, x: usize, y: usize, color: u32, bg_color: Option<u32>) {
         match self {
             Backend::Uefi(fb) => {
                 let temp_fb = GpuFb {
@@ -72,9 +70,9 @@ impl GraphicBackend for Backend {
                     height: fb.height,
                     pitch: fb.pitch,
                 };
-                temp_fb.draw_char(c, x, y, color);
+                temp_fb.draw_char_ex(c, x, y, color, bg_color);
             }
-            Backend::Gpu(fb) => fb.draw_char(c, x, y, color),
+            Backend::Gpu(fb) => fb.draw_char_ex(c, x, y, color, bg_color),
         }
     }
 

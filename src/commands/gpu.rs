@@ -24,7 +24,6 @@ pub fn execute() {
                         ptr as *mut u32,
                         target_width * target_height
                     ));
-                    print!(" OK!");
                 } else {
                     print!(" FAILED (Not enough memory)");
                     return;
@@ -44,7 +43,7 @@ pub fn execute() {
             c.clear(0x000000);
             
             c.set_color(0x00FF00);
-            print!("GPU Backend Active");
+            print!("GPU Backend is now active!\n");
             c.set_color(0xFFFFFF);
             
             c.backend.swap_buffers();

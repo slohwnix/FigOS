@@ -9,6 +9,6 @@ pub fn execute() {
     print!("\npanic      : Force a kernel panic");
     print!("\nwait [s]   : Wait for [s] seconds");
     print!("\nfetch      : Show system information");
-    print!("\nGpu        : Switch to Gpu buffer (beta)");
+    print!("\ngpu        : Switch to gpu buffer (beta)");
     print!("\n");
 }

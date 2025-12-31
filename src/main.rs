@@ -67,7 +67,9 @@ fn main() -> Status {
     }
 
     log!("OK", "FigOS Kernel booting");
-    log!("INFO", "Max Resolution set : {}x{}", width, height);
+    log!("INFO", "Screen Resolution set to : {}x{}", width, height);
+
+    unsafe { core::arch::asm!("cli"); }
 
     log!("INFO", "Initializing GDT...");
     let gdt = GDT_INSTANCE.call_once(|| Gdt::new());

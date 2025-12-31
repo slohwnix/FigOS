@@ -5,6 +5,7 @@ pub struct Console {
     pub cursor_x: usize,
     pub cursor_y: usize,
     pub color: u32,
+    pub bg_color: u32,
     pub line_start_x: usize,
     pub ticks: u64,
     pub cursor_visible: bool,
@@ -17,6 +18,7 @@ impl Console {
             cursor_x: 20, 
             cursor_y: 20, 
             color: 0xFFFFFF, 
+            bg_color: 0x000000,
             line_start_x: 20,
             ticks: 0,
             cursor_visible: true,
@@ -25,6 +27,11 @@ impl Console {
 
     pub fn set_color(&mut self, color: u32) {
         self.color = color;
+    }
+
+    pub fn set_colors(&mut self, fg: u32, bg: u32) {
+        self.color = fg;
+        self.bg_color = bg;
     }
 
     pub fn lock_prompt(&mut self) {
@@ -43,7 +50,7 @@ impl Console {
         self.ticks += 1;
         if self.ticks % 80 == 0 {
             self.cursor_visible = !self.cursor_visible;
-            let color = if self.cursor_visible { self.color } else { 0x000000 };
+            let color = if self.cursor_visible { self.color } else { self.bg_color };
             self.draw_cursor(color);
             self.backend.swap_rect(self.cursor_x, self.cursor_y + 17, 8, 2);
         }
@@ -53,7 +60,7 @@ impl Console {
         if c == '\n' {
             self.new_line_no_swap();
         } else {
-            self.backend.draw_char(c, self.cursor_x, self.cursor_y, self.color);
+            self.backend.draw_char(c, self.cursor_x, self.cursor_y, self.color, Some(self.bg_color));
             self.cursor_x += 9;
             if self.cursor_x + 9 >= self.backend.width() {
                 self.new_line_no_swap();
@@ -62,7 +69,7 @@ impl Console {
     }
 
     pub fn write_char(&mut self, c: char) {
-        self.draw_cursor(0); 
+        self.draw_cursor(self.bg_color); 
         self.internal_write_char(c);
         self.cursor_visible = true;
         self.draw_cursor(self.color);
@@ -72,13 +79,13 @@ impl Console {
     pub fn write_str(&mut self, s: &str) {
         let mut scrolled = false;
         let start_y = self.cursor_y;
-        self.draw_cursor(0);
+        self.draw_cursor(self.bg_color);
         for c in s.chars() {
             if c == '\n' {
                 self.new_line_no_swap();
                 scrolled = true;
             } else {
-                self.backend.draw_char(c, self.cursor_x, self.cursor_y, self.color);
+                self.backend.draw_char(c, self.cursor_x, self.cursor_y, self.color, Some(self.bg_color));
                 self.cursor_x += 9;
                 if self.cursor_x + 9 >= self.backend.width() {
                     self.new_line_no_swap();
@@ -97,11 +104,11 @@ impl Console {
 
     pub fn backspace(&mut self) {
         if self.cursor_x > self.line_start_x {
-            self.draw_cursor(0);
+            self.draw_cursor(self.bg_color);
             self.cursor_x -= 9;
             for y in 0..20 {
                 for x in 0..9 {
-                    self.backend.draw_pixel(self.cursor_x + x, self.cursor_y + y, 0);
+                    self.backend.draw_pixel(self.cursor_x + x, self.cursor_y + y, self.bg_color);
                 }
             }
             self.cursor_visible = true;
@@ -111,11 +118,11 @@ impl Console {
     }
 
     pub fn clear_current_line(&mut self) {
-        self.draw_cursor(0);
+        self.draw_cursor(self.bg_color);
         while self.cursor_x > self.line_start_x {
             self.cursor_x -= 9;
             for y in 0..20 {
-                for x in 0..9 { self.backend.draw_pixel(self.cursor_x + x, self.cursor_y + y, 0); }
+                for x in 0..9 { self.backend.draw_pixel(self.cursor_x + x, self.cursor_y + y, self.bg_color); }
             }
         }
         self.cursor_visible = true;
@@ -128,7 +135,7 @@ impl Console {
         let line_height = 20;
         let fb_height = self.backend.height();
         if self.cursor_y + line_height >= fb_height {
-            self.backend.scroll(1, line_height, None);
+            self.backend.scroll(1, line_height, Some(self.bg_color));
             self.cursor_y = fb_height - line_height;
         } else {
             self.cursor_y += line_height;
@@ -136,6 +143,7 @@ impl Console {
     }
 
     pub fn clear(&mut self, color: u32) {
+        self.bg_color = color;
         self.backend.clear(color);
         self.cursor_x = 20;
         self.cursor_y = 20;
@@ -143,7 +151,7 @@ impl Console {
         self.draw_cursor(self.color);
         self.backend.swap_buffers();
     }
-    #[allow(dead_code)]
+
     pub fn flush(&self) {
         self.backend.swap_buffers();
     }
