@@ -23,8 +23,9 @@ It uses the [`uefi-rs`](https://docs.rs/uefi/latest/uefi/) crate as its base.
 sudo apt update && sudo apt install mtools xorriso dosfstools
 ```
 - **QEMU**: Required for running and testing the kernel.
+- **OVMF.fd**: Required for running and testing the kernel. ( you need to move the ovmf.fd in the project folder )
 
-> Note: On Windows, WSL is only needed for `.iso` builds. For `.efi`, you only need Rust and QEMU.
+> Note: On Windows, WSL is only needed for `.iso` builds. For `.efi`, you only need Rust and QEMU. 
 
 ---
 
